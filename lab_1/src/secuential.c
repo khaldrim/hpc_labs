@@ -10,54 +10,54 @@ void es_secuencial(char *inputFile, char *outputSecuential, int nflag, int dflag
    *
    */
 
-  FILE *image_raw;
-  int **data, **outputDataSecuential;
-  int i = 0, col = 0, value = 0;
-  int total_dimension = nflag * nflag;
-  int **kernel = NULL;
-
-  kernel = createKernelSecuential();
-
-  image_raw = fopen(inputFile, "rb");
-  if (image_raw == NULL) {
-    printf("No se encontró el archivo de entrada.\n");
-    exit(EXIT_FAILURE);
-  }
-
-  data = createDataMatrix(nflag);
-  outputDataSecuential = createDataMatrix(nflag);
-
-  while(i < total_dimension) {
-    fread(&value, sizeof(int), 1, image_raw);
-
-    if (value <= 0)
-      value = 0;
-    else
-      value = 255;
-
-    data[i%nflag][col] = value;
-    col++;
-    i++;
-
-    if (col > nflag)
-      col = 0;
-  }
-
-  fclose(image_raw);
-  outputDataSecuential = copyDataMatrix(data, outputDataSecuential, nflag);
-
-  printf("Printing secuential image normal: \n");
-  printResult(nflag, data);
-  printf("\n\n");
-
-  outputDataSecuential = secuential_kernel(nflag, data, outputDataSecuential, kernel);
-
-  if (nflag) {
-    printf("Printing secuential image with dilation: \n");
-    printResult(nflag, outputDataSecuential);
-  }
-
-  writeResult(nflag, outputDataSecuential, outputSecuential);
+  // FILE *image_raw;
+  // int **data, **outputDataSecuential;
+  // int i = 0, col = 0, value = 0;
+  // int total_dimension = nflag * nflag;
+  // int **kernel = NULL;
+  //
+  // kernel = createKernelSecuential();
+  //
+  // image_raw = fopen(inputFile, "rb");
+  // if (image_raw == NULL) {
+  //   printf("No se encontró el archivo de entrada.\n");
+  //   exit(EXIT_FAILURE);
+  // }
+  //
+  // data = createDataMatrix(nflag);
+  // outputDataSecuential = createDataMatrix(nflag);
+  //
+  // while(i < total_dimension) {
+  //   fread(&value, sizeof(int), 1, image_raw);
+  //
+  //   if (value <= 0)
+  //     value = 0;
+  //   else
+  //     value = 255;
+  //
+  //   data[i%nflag][col] = value;
+  //   col++;
+  //   i++;
+  //
+  //   if (col > nflag)
+  //     col = 0;
+  // }
+  //
+  // fclose(image_raw);
+  // outputDataSecuential = copyDataMatrix(data, outputDataSecuential, nflag);
+  //
+  // printf("Printing secuential image normal: \n");
+  // printResult(nflag, data);
+  // printf("\n\n");
+  //
+  // outputDataSecuential = secuential_kernel(nflag, data, outputDataSecuential, kernel);
+  //
+  // if (nflag) {
+  //   printf("Printing secuential image with dilation: \n");
+  //   printResult(nflag, outputDataSecuential);
+  // }
+  //
+  // writeResult(nflag, outputDataSecuential, outputSecuential);
 }
 
 int** secuential_kernel(int dimension, int **data, int **output, int **kernel) {
@@ -87,15 +87,6 @@ void writeResult(int nflag, int **data, char *name) {
   for (i = 0; i < nflag; i++)
     fwrite(data[i], sizeof(int), nflag, fp);
   fclose(fp);
-}
-
-int** createDataMatrix(int dimension) {
-  int i = 0;
-  int **data = (int **)calloc(dimension, sizeof(int*));
-  for (i=0; i<dimension; i++)
-    data[i] = (int*)calloc(dimension, sizeof(int));
-
-  return data;
 }
 
 int** copyDataMatrix(int **data, int **output, int dimension) {

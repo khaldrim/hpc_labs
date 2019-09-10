@@ -12,7 +12,5 @@ typedef struct {
 
 void es_simd();
 Kernel* createKernelSIMD(Kernel *k);
-int** createPackedDataMatrix(int dimension);
-int** readImageValues(FILE *fp, int **data, int dimension);
 
 #endif
