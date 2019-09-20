@@ -4,9 +4,11 @@
 #define _FUNCTIONS_H_
 
 /* functions file */
-void start(char *input_file, char *output_secuential, char *output_simd, int nflag, int dflag);
-void printResult(int dimension, float **data);
-float **readImageValues(FILE *fp, float **data, int dimension);
-float **createDataMatrix(float **data, int dimension);
+void start(char *inputFile, char *outputSecuential, char *outputSimd, int nflag, int dflag);
+void printResult(int dimension, int **data);
+int **readImageValues(FILE *fp, int **data, int dimension);
+int **createDataMatrix(int **data, int dimension);
+int **readImageValues(FILE *fp, int **data, int dimension);
+void writeResult(int nflag, int **data, char *name);
 
 #endif

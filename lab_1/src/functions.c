@@ -1,47 +1,62 @@
-#include "../include/functions.h"
-#include "../include/secuential.h"
-#include "../include/simd.h"
+#include "functions.h"
+#include "secuential.h"
+#include "simd.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-void start(char *inputFile, char *outputSecuential, char *output_simd, int nflag, int dflag) {
-  // es_secuencial(inputFile, outputSecuential, nflag, dflag, kernel);
-  es_simd();
+//TODO abrir el archivo y crear las matrices aqui, luego mandarlas a las funciones correspondientes
+void start(char *inputFile, char *outputSecuential, char *outputSimd, int nflag, int dflag) {
+  // es_secuencial(inputFile, outputSecuential, nflag, dflag);
+  es_simd(inputFile, outputSimd, nflag, dflag);
 }
 
-float **readImageValues(FILE *fp, float **data, int dimension) {
-  int i = 0, col = 0, value = 0;
-  int total_dimension = dimension * dimension;
-  while(i < total_dimension) {
-    fread(&value, sizeof(float), 1, fp);
+int **createDataMatrix(int **data, int dimension) {
+  int i = 0;
+  data = (int**)calloc(dimension, sizeof(int*));
+  for (i = 0; i < dimension; i++)
+    data[i] = (int*)calloc(dimension, sizeof(int));
 
-    if (value <= 0)
-      value = 0;
-    else
-      value = 255;
+  return data;
+}
 
-    data[i%dimension][col] = value;
-    col++;
-    i++;
+int **readImageValues(FILE *fp, int **data, int dimension) {
+  int i = 0, j = 0, value = 0;
 
-    if (col > dimension)
-      col = 0;
+  fseek(fp, 0, SEEK_SET);
+
+  for (i = 0; i < dimension; i++) {
+    for (j = 0; j < dimension; j++) {
+      fread(&value, sizeof(int), 1, fp);
+      
+      if (value == 0)
+        data[i][j] = 0;
+      else
+        data[i][j] = 255;
+    }
+  }
+  
+  return data;
+}
+
+void writeResult(int nflag, int **data, char *name) {
+  FILE *fp = NULL;
+  int i = 0;
+
+  fp = fopen(name, "wb");
+  if (fp == NULL) {
+    printf("No se puede escribir el archivo: %s", name);
+    exit(EXIT_FAILURE);
   }
 
-  return data;
+  for (i = 0; i < nflag; i++)
+    fwrite(data[i], sizeof(int), nflag, fp);
+  fclose(fp);
 }
 
-float **createDataMatrix(float **data, int dimension) {
-  int i = 0;
-  data = (float**)calloc(dimension, sizeof(float*));
-  for (i = 0; i < dimension; i++)
-    data[i] = (float*)calloc(dimension, sizeof(float));
 
-  return data;
-}
-
-void printResult(int dimension, float **data) {
+void printResult(int dimension, int **data) {
   /* Permite imprimir por pantalla la imagen resultante;
    * donde el valor 0 se reemplaza por un 0 y el valor
    * 255 por un 1.
@@ -51,9 +66,9 @@ void printResult(int dimension, float **data) {
   for (row = 0; row < dimension; row++) {
     for (col = 0; col < dimension; col++) {
       if(data[row][col] == 0) {
-        printf("0");
+        printf(". ");
       } else {
-        printf("1");
+        printf("# ");
       }
     }
     printf("\n");

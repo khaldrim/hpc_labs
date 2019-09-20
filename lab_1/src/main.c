@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
-#include "../include/functions.h"
+#include "functions.h"
 
 int main(int argc, char **argv) {
   int nflag = 0;

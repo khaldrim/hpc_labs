@@ -1,16 +1,15 @@
-#include <xmmintrin.h>
-#include <stdio.h>
-
+#include <x86intrin.h>
 #ifndef _SIMD_H_
 #define _SIMD_H_
 
 typedef struct {
-  __m128 __attribute__ ((packed)) top;
-  __m128 __attribute__ ((aligned (16))) center;
-  __m128 __attribute__ ((aligned (16))) down;
-} Kernel;
+    int **data __attribute__ ((aligned (16)));
+    int **output __attribute__ ((aligned (16)));
+} DataSimd;
 
-void es_simd();
-Kernel* createKernelSIMD(Kernel *k);
+void es_simd(char *inputFile, char *outputSimd, int nflag, int dflag);
+void applySimdKernel(int dimension, int **data, int **output);
+void print128_num(__m128i var);
+int** copyDataMatrix(int **data, int **output, int dimension);
 
 #endif

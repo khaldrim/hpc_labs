@@ -1,63 +1,127 @@
-#include "../include/simd.h"
-#include "../include/functions.h"
+#include "simd.h"
+#include "functions.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <xmmintrin.h>
 
-void es_simd() {
-  Kernel *kernel = NULL;
-  float **data = NULL;
-  FILE *fp = NULL;
+// #include <immintrin.h>
+// #include <smmintrin.h> /* _mm_max_epi32() */
+// #include <emmintrin.h>
+#include <stdint.h>
 
-  kernel = createKernelSIMD(kernel);
-  fp = fopen("8_8_example.raw", "rb");
-  if (fp == NULL) {
+void es_simd(char *inputFile, char *outputSimd, int nflag, int dflag) {
+  FILE *image_raw = NULL;
+
+  image_raw = fopen(inputFile, "rb");
+  if (image_raw == NULL) {
     printf("No se encontró el archivo de entrada.\n");
     exit(EXIT_FAILURE);
   }
+  
+  DataSimd *d = (DataSimd*)malloc(sizeof(DataSimd));
 
-  data = createDataMatrix(data, 8);
-  data = readImageValues(fp, data, 8);
-  fclose(fp);
+  d->data   = createDataMatrix(d->data, nflag);
+  d->output = createDataMatrix(d->output, nflag);
+  d->output = copyDataMatrix(d->data, d->output, nflag);
 
-  int i = 0, j = 0;
+  d->data = readImageValues(image_raw, d->data, nflag);
+  fclose(image_raw);
+ 
 
-  __m128 v;
-  for (i = 1; i < 8 - 2; i++) {
-    printf("fila %i ", i);
-    for (j = 0; j < 8 - 2; j+=4) {
-      printf("columna %i \n", j);
-
-        if (j == 4) {
-          printf("hola\n");
-          // float __attribute__ ((aligned (16))) partial[4] = {data[i][j], data[i][j+1], -100, 100};
-          // v = _mm_load_ps(partial);
-          // printf("v: %f %f %f %f\n", v[0], v[1], v[2], v[3]);
-        } else {
-          // printf("%f\n", data[i][j]);
-          printf("%i %i \n", i, j);
-          v = _mm_load_ps(&data[i][j]);
-          // partial = _mm_add_ps(kernel->top, v);
-          printf("v: %f %f %f %f\n", v[0], v[1], v[2], v[3]);
-        }
-
-      // printf("top: %f %f %f %f\n", partial[0], partial[1], partial[2], partial[3]);
-    }
-  }
-
+  printf("Printing image\n");
+  printResult(nflag, d->data);
   printf("\n\n");
-  printResult(8, data);
+
+  applySimdKernel(nflag, d->data, d->output);
+  
+  printf("Printing image simd\n");
+  printResult(nflag, d->output);
+  printf("\n\n");
+
+
 }
 
-Kernel* createKernelSIMD(Kernel *k) {
-  float x[4] __attribute__ ((aligned (16)))= {0, 1, 0, 0};
-  float y[4] __attribute__ ((aligned (16)))= {1, 1, 1, 0};
+void applySimdKernel(int dimension, int **data, int **output) {
+  int i, j;
+  
+  for (i = 1; i < dimension - 2; i++)
+  {
+    for (j = 1; j < dimension - 2; j+=4)
+    {
+      __m128i p1 = _mm_set1_epi32(0);
+      __m128i p2 = _mm_set1_epi32(0);
+      __m128i p3 = _mm_set1_epi32(0);
+      __m128i total = _mm_set1_epi32(0);
+      
+      if ((dimension - j) < 4) {
+        //Case where you can't load 4 data at the same time because seg. fault.
 
-  k = (Kernel*)malloc(sizeof(Kernel));
+        __m128i top    = _mm_set_epi32(0, data[i-1][j+2], data[i-1][j+1], data[i-1][j]);
+        __m128i down   = _mm_set_epi32(0, data[i+1][j+2], data[i+1][j+1], data[i+1][j]);
+        
+        __m128i right  = _mm_set_epi32(0, 0, data[i][j+2], data[i][j+1]);
+        __m128i left   = _mm_set_epi32(data[i][j+2], data[i][j+1], data[i][j], data[i][j-1]);
+        __m128i center = _mm_set_epi32(0, data[i][j+2], data[i][j+1], data[i][j]);
 
-  k->top    = _mm_load_ps(x);
-  k->center = _mm_load_ps(y);
-  k->down    = _mm_load_ps(x);
+        p1 = _mm_max_epi32(top, left);
+        p2 = _mm_max_epi32(down, right);
+        p3 = _mm_max_epi32(p1, center);
+        total = _mm_max_epi32(p3, p2);
 
-  return k;
+        uint32_t *final = (uint32_t*) &total;
+        if(final[0] > 0)
+          output[i][j] = 255;
+        if (final[1] > 0)
+          output[i][j+1] = 255;
+        if (final[2] > 0)
+          output[i][j+2] = 255;
+        if (final[3] > 0)
+          output[i][j+3] = 255;
+
+      } else {
+        //Load data
+        __m128i top = _mm_set_epi32(data[i-1][j+3], data[i-1][j+2], data[i-1][j+1], data[i-1][j]);
+        __m128i down = _mm_set_epi32(data[i+1][j+3], data[i+1][j+2], data[i+1][j+1], data[i+1][j]);
+
+        __m128i right = _mm_set_epi32(data[i][j+4], data[i][j+3], data[i][j+2], data[i][j+1]);
+        __m128i left   = _mm_set_epi32(data[i][j+2], data[i][j+1], data[i][j], data[i][j-1]);
+        __m128i center = _mm_set_epi32(data[i][j+3], data[i][j+2], data[i][j+1], data[i][j]);
+
+        p1 = _mm_max_epi32(top, left);
+        p2 = _mm_max_epi32(down, right);
+        p3 = _mm_max_epi32(p1, center);
+        total = _mm_max_epi32(p3, p2);
+
+        uint32_t *final = (uint32_t*) &total;
+        if(final[0] > 0)
+          output[i][j] = 255;
+        if (final[1] > 0)
+          output[i][j+1] = 255;
+        if (final[2] > 0)
+          output[i][j+2] = 255;
+        if (final[3] > 0)
+          output[i][j+3] = 255;
+      }
+        // printf("Fila: %i Columna: %i\n", i, j);
+        // printResult(dimension, output);
+        // if(i == 7)
+        //   exit(1);
+    }
+  }
+}
+
+
+void print128_num(__m128i var)
+{
+    uint32_t *val = (uint32_t*) &var;
+    printf("Numerical: %i %i %i %i\n", 
+           val[0], val[1], val[2], val[3]);
+}
+
+int** copyDataMatrix(int **data, int **output, int dimension) {
+  int i, j;
+  for (i = 0; i < dimension; i++)
+    for (j = 0; j < dimension; j++)
+      output[i][j] = data[i][j];
+
+  return output;
 }
