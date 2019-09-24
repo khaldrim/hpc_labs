@@ -8,6 +8,7 @@ void start(char *inputFile, char *outputSecuential, char *outputSimd, int nflag,
 void printResult(int dimension, int **data);
 int **readImageValues(FILE *fp, int **data, int dimension);
 int **createDataMatrix(int **data, int dimension);
+int** copyDataMatrix(int **data, int **output, int dimension);
 int **readImageValues(FILE *fp, int **data, int dimension);
 void writeResult(int nflag, int **data, char *name);
 

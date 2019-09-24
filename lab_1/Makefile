@@ -27,5 +27,6 @@ clean:
 
 run:
 	@ echo "Running..."
-	# @ ./bin/dilation -i ./data/circulos.raw -s ./test/circulos_secuential.raw -p ./test/circulos_simd.raw -N 256 -D 1
+	# @ ./bin/dilation -i ./data/circulos.raw -s ./test/circulos_secuential.raw -p ./test/circulos_simd.raw -N 256
 	@ ./bin/dilation -i ./data/example14x14.raw -s ./test/example_secuential.raw -p ./test/example_simd.raw -N 14 -D 1
+	# @ ./bin/dilation -i ./data/pikachu256x256.raw -s ./test/pikachu_secuential.raw -p ./test/pikachu_simd.raw -N 256 -D 1
