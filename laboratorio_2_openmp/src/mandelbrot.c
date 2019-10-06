@@ -11,16 +11,18 @@ void writeData(Data *data, char *fileName) {
     }
     
     for (i = 0; i < data->row; i++)
-        fwrite(data->display[i], sizeof(float), data->column, fp);
+        fwrite(data->display[i], sizeof(double), data->column, fp);
     
     fclose(fp);
 }
 
 
-Data* mandelbrot(Data *data, int depth, float a, float d, float s) {
+Data* mandelbrot(Data *data, int depth, double a, double d, double s) {
     int i,j;
 
-    /* desde el punto complejo (-1, 1) hasta (1, )*/
+    /*  desde el punto complejo (-1, 1) hasta (1, -1) 
+        ,es decir, recorro la columna y luego las filas 
+    */
 
     for (i = 0; i < data->row; i++) {
         for (j = 0; j < data->column; j++) {
@@ -28,40 +30,39 @@ Data* mandelbrot(Data *data, int depth, float a, float d, float s) {
             int n = 1;
 
             double c_real = a + (j*s);
-            double c_imag = d + (i*s);
+            double c_imag = d - (i*s);
 
             double z_real = 0.0;
             double z_imag = 0.0;
 
             z_real = 0.0 + c_real;
             z_imag = 0.0 + c_imag;
-            while((((z_real * z_real) + (z_imag * z_imag)) < 4.0) && n < depth) {
+            do {
                 double temp = ((pow(z_real, 2.0)) - (pow(z_imag, 2.0))) + c_real;
                 z_imag = (2 * z_real * z_imag) + c_imag;
                 z_real = temp;
                 n++;
-            }
-            
-            data->display[i][j] = log(n) + 1.0; 
+            } while(((pow(z_real, 2.0) + pow(z_imag, 2.0)) < 4.0) && n < depth);
+            data->display[i][j] = log((double) n);
         }
     }
 
     return data;
 }
 
-Data* initDataStructure(Data *data, float a, float b, float c, float d, float s) {
+Data* initDataStructure(Data *data, double a, double b, double c, double d, double s) {
     int i;
     data = (Data*)malloc(sizeof(Data));
 
     /* calculate dimension of complex grid NxM */
-    data->column = (int) ceil((abs(a)/s) + (c/s));
-    data->row    = (int )ceil((abs(b)/s) + (d/s));
+    data->column = (int) (abs(a)/s) + (c/s);
+    data->row    = (int) (abs(b)/s) + (d/s);
     printf("Dimension: %d filas %d columnas \n", data->row, data->column);
 
-    data->display = (float**)calloc(data->column, sizeof(float*));
+    data->display = (double**)calloc(data->column, sizeof(double*));
     if (data->display != NULL) {
         for (i = 0; i < data->row; i++) {
-            data->display[i] = (float*)calloc(data->column, sizeof(float));
+            data->display[i] = (double*)calloc(data->column, sizeof(double));
             if (data->display[i] == NULL) {
                 perror("Error allocating memory for the display matrix: ");
                 exit(EXIT_FAILURE);
@@ -71,12 +72,11 @@ Data* initDataStructure(Data *data, float a, float b, float c, float d, float s)
         perror("Error allocating memory for the display matrix: ");
         exit(EXIT_FAILURE);
     }
-
     return data;
 }
 
 
-void start(int depth, float a, float b, float c, float d, float s, char *fileName) {
+void start(int depth, double a, double b, double c, double d, double s, char *fileName) {
     Data *data = NULL;
 
     data = initDataStructure(data, a, b, c, d, s); 
@@ -103,35 +103,35 @@ int main(int argc, char **argv) {
             }
             break;
         case 'a':
-            sscanf(optarg, "%f", &a);
+            sscanf(optarg, "%lf", &a);
             if (a >= 0) {
                 printf("La bandera -a no puede ser menor o igual a cero.\n");
                 exit(EXIT_FAILURE);
             }
             break;
         case 'b':
-            sscanf(optarg, "%f", &b);
+            sscanf(optarg, "%lf", &b);
             if (b >= 0) {
                 printf("La bandera -b no puede ser menor o igual a cero.\n");
                 exit(EXIT_FAILURE);
             }
             break;
         case 'c':
-            sscanf(optarg, "%f", &c);
+            sscanf(optarg, "%lf", &c);
             if (c <= 0) {
                 printf("La bandera -c no puede ser menor o igual a cero.\n");
                 exit(EXIT_FAILURE);
             }
             break;
         case 'd':
-            sscanf(optarg, "%f", &d);
+            sscanf(optarg, "%lf", &d);
             if (d <= 0) {
                 printf("La bandera -d no puede ser menor o igual a cero.\n");
                 exit(EXIT_FAILURE);
             }
             break;
         case 's':
-            sscanf(optarg, "%f", &s);
+            sscanf(optarg, "%lf", &s);
             if (s <= 0.0) {
                 printf("La bandera -s no puede ser menor o igual a cero.\n");
                 exit(EXIT_FAILURE);
@@ -156,11 +156,11 @@ int main(int argc, char **argv) {
 
     printf("Values: \n");
     printf("    i: %d\n", i);
-    printf("    a: %f\n", a);
-    printf("    b: %f\n", b);
-    printf("    c: %f\n", c);
-    printf("    d: %f\n", d);
-    printf("    s: %f\n", s);
+    printf("    a: %lf\n", a);
+    printf("    b: %lf\n", b);
+    printf("    c: %lf\n", c);
+    printf("    d: %lf\n", d);
+    printf("    s: %lf\n", s);
     printf("    f: %s\n\n", f);
 
     start(i,a,b,c,d,s,f);

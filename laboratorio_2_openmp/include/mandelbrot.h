@@ -10,12 +10,12 @@
 
 typedef struct  {
     int column, row;
-    float **display;
+    double **display;
 } Data;
 
-void start(int depth, float a, float b, float c, float d, float s, char *fileName);
-Data* initDataStructure(Data *data, float a, float b, float c, float d, float s);
-Data* mandelbrot(Data *data, int depth, float a, float d, float s);
+void start(int depth, double a, double b, double c, double d, double s, char *fileName);
+Data* initDataStructure(Data *data, double a, double b, double c, double d, double s);
+Data* mandelbrot(Data *data, int depth, double a, double d, double s);
 void writeData(Data *data, char *fileName);
 
 #endif
