@@ -1,0 +1,23 @@
+INC_DIRS = -Iinclude
+CFLAGS = -c -Wall
+
+all: clean obj/mandelbrot.o mandelbrot run
+
+mandelbrot:
+	@ gcc obj/mandelbrot.o -o bin/mandelbrot -lm
+	@ echo "Compilation finished. mandelbrot is in bin/ folder."
+
+obj/mandelbrot.o: src/mandelbrot.c
+	@ gcc  $(CFLAGS) $(INC_DIRS) src/mandelbrot.c -o obj/mandelbrot.o
+
+clean:
+	@ echo "Clean bin/ results/ obj/ folders."
+	@ rm -rf obj/
+	@ rm -rf bin/
+	@ rm -rf results/
+	@ mkdir obj/ bin/ results/
+
+run:
+	@ echo "Running Mandelbrot"
+	@ ./bin/mandelbrot -i 500 -a -1 -b -1 -c 1 -d 1 -s 0.001 -f ./results/secuential.raw
+	# @ ./bin/mandelbrot -i 500 -a -0.748766713922161 -b -0.748766713922161 -c 0.123640844894862 -d 0.123640844894862 -s 0.000000000001 -f ./results/secuential.raw
