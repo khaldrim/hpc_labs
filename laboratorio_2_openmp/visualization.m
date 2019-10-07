@@ -1,4 +1,4 @@
-f = fopen('results/secuential.raw', 'r');
+f = fopen('results/parallel.raw', 'r');
 M = fread(f, 'double');
 M = reshape(M, 2000, 2000);
 imagesc(M);

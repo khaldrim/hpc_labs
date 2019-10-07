@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <complex.h>
 #include <math.h>
 
 typedef struct  {
@@ -17,5 +16,6 @@ void start(int depth, double a, double b, double c, double d, double s, char *fi
 Data* initDataStructure(Data *data, double a, double b, double c, double d, double s);
 Data* mandelbrot(Data *data, int depth, double a, double d, double s);
 void writeData(Data *data, char *fileName);
+void clean(Data *data);
 
 #endif

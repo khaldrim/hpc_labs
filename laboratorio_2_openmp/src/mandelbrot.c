@@ -1,5 +1,13 @@
 #include "mandelbrot.h"
 
+void clean(Data *data) {
+    int i;
+    for (i = 0; i < data->row; i++) {
+        double *currentPtr = data->display[i];
+        free(currentPtr);
+    }
+}
+
 void writeData(Data *data, char *fileName) {
     FILE *fp = NULL;
     int i = 0;
@@ -57,7 +65,7 @@ Data* initDataStructure(Data *data, double a, double b, double c, double d, doub
     /* calculate dimension of complex grid NxM */
     data->column = (int) (abs(a)/s) + (c/s);
     data->row    = (int) (abs(b)/s) + (d/s);
-    printf("Dimension: %d filas %d columnas \n", data->row, data->column);
+    // printf("Dimension: %d filas %d columnas \n", data->row, data->column);
 
     data->display = (double**)calloc(data->column, sizeof(double*));
     if (data->display != NULL) {
@@ -82,6 +90,7 @@ void start(int depth, double a, double b, double c, double d, double s, char *fi
     data = initDataStructure(data, a, b, c, d, s); 
     data = mandelbrot(data, depth, a, d, s);
     writeData(data, fileName);
+    clean(data);
 }
 
 int main(int argc, char **argv) {
@@ -154,16 +163,6 @@ int main(int argc, char **argv) {
         }       
     }
 
-    printf("Values: \n");
-    printf("    i: %d\n", i);
-    printf("    a: %lf\n", a);
-    printf("    b: %lf\n", b);
-    printf("    c: %lf\n", c);
-    printf("    d: %lf\n", d);
-    printf("    s: %lf\n", s);
-    printf("    f: %s\n\n", f);
-
     start(i,a,b,c,d,s,f);
-
     return EXIT_SUCCESS;
 }
