@@ -50,10 +50,10 @@ Data* initDataStructure(Data *data, double a, double b, double c, double d, doub
     data = (Data*)malloc(sizeof(Data));
 
     /* calculate dimension of complex grid NxM */
-    data->column = (int) (abs(a)/s) + (c/s);
-    data->row    = (int) (abs(b)/s) + (d/s);
-    // printf("Dimension: %d filas %d columnas \n", data->row, data->column);
-
+    data->column = (int) ((c - a)/s) + 1;
+    data->row    = (int) ((d - b)/s) + 1;
+    printf("Dimension: %d filas %d columnas \n", data->row, data->column);
+    
     data->display = (double**)calloc(data->column, sizeof(double*));
     if (data->display != NULL) {
         for (i = 0; i < data->row; i++) {
@@ -67,6 +67,8 @@ Data* initDataStructure(Data *data, double a, double b, double c, double d, doub
         perror("Error allocating memory for the display matrix: ");
         exit(EXIT_FAILURE);
     }
+
+    printf("matrix created \n");
     return data;
 }
 
@@ -78,7 +80,47 @@ void start(int depth, double a, double b, double c, double d, double s, char *fi
     omp_set_num_threads(t);
 
     data = initDataStructure(data, a, b, c, d, s);
+    
+    int i = 0;
+    while (i < data->row) {
+        #pragma omp parallel
+        {
+            int j = 0;
+            int tid = omp_get_thread_num();
+            #pragma omp parallel for
+            for(j= omp_get_thread_num(); j < data->column; j += t) {
+                // printf("fila: %d, columna: %d | tid: %d \n", i, (j+tid), tid);
+                if ((j + tid) < data->column)
+                    mandelbrot(data, i, (j+tid), depth, a, d, s);
+            }
 
+            #pragma omp barrier
+
+            #pragma omp single 
+            {
+                i++;
+            }
+        }
+    }
+
+    /* 2da version me enrrede !
+    #pragma omp parallel shared(data, depth, a, d, s)
+    {
+        int i = 0, j = 0;
+        int tid = omp_get_thread_num(); 
+        j = j + tid;
+        #pragma omp parallel for shared(data, a, d, s) private(i, j, tid)  
+        for(i = 0; i < data->row; i++) {
+            while (j < data->column) {
+                mandelbrot(data, i, j, depth, a, d, s);
+                j += omp_get_thread_num();    
+                j = j + tid;
+            }
+        }
+    }
+    */
+
+    /* 1era version, se cae en matrices muy grandes, creo que es porque se generan demasiados task
     #pragma omp parallel shared(data, depth, a, d, s)
     {
         int i = 0,j = 0;
@@ -94,6 +136,7 @@ void start(int depth, double a, double b, double c, double d, double s, char *fi
             }
         }
     }
+    */
 
     writeData(data, fileName);
     clean(data);
@@ -119,31 +162,31 @@ int main(int argc, char **argv) {
             break;
         case 'a':
             sscanf(optarg, "%lf", &a);
-            if (a >= 0) {
-                printf("La bandera -a no puede ser menor o igual a cero.\n");
-                exit(EXIT_FAILURE);
-            }
+            // if (a >= 0) {
+            //     printf("La bandera -a no puede ser menor o igual a cero.\n");
+            //     exit(EXIT_FAILURE);
+            // }
             break;
         case 'b':
             sscanf(optarg, "%lf", &b);
-            if (b >= 0) {
-                printf("La bandera -b no puede ser menor o igual a cero.\n");
-                exit(EXIT_FAILURE);
-            }
+            // if (b >= 0) {
+            //     printf("La bandera -b no puede ser menor o igual a cero.\n");
+            //     exit(EXIT_FAILURE);
+            // }
             break;
         case 'c':
             sscanf(optarg, "%lf", &c);
-            if (c <= 0) {
-                printf("La bandera -c no puede ser menor o igual a cero.\n");
-                exit(EXIT_FAILURE);
-            }
+            // if (c <= 0) {
+            //     printf("La bandera -c no puede ser menor o igual a cero.\n");
+            //     exit(EXIT_FAILURE);
+            // }
             break;
         case 'd':
             sscanf(optarg, "%lf", &d);
-            if (d <= 0) {
-                printf("La bandera -d no puede ser menor o igual a cero.\n");
-                exit(EXIT_FAILURE);
-            }
+            // if (d <= 0) {
+            //     printf("La bandera -d no puede ser menor o igual a cero.\n");
+            //     exit(EXIT_FAILURE);
+            // }
             break;
         case 's':
             sscanf(optarg, "%lf", &s);
@@ -175,6 +218,8 @@ int main(int argc, char **argv) {
             exit(EXIT_FAILURE);
         }       
     }
+
+    /* comprobar cotas */
 
     start(i,a,b,c,d,s,f,t);
     return EXIT_SUCCESS;

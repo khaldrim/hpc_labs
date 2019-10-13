@@ -63,9 +63,9 @@ Data* initDataStructure(Data *data, double a, double b, double c, double d, doub
     data = (Data*)malloc(sizeof(Data));
 
     /* calculate dimension of complex grid NxM */
-    data->column = (int) (abs(a)/s) + (c/s);
-    data->row    = (int) (abs(b)/s) + (d/s);
-    // printf("Dimension: %d filas %d columnas \n", data->row, data->column);
+    data->column = (int) ((abs(c) + abs(a))/s) + 1;
+    data->row    = (int) ((abs(d) + abs(b))/s) + 1;
+    printf("Dimension: %d filas %d columnas \n", data->row, data->column);
 
     data->display = (double**)calloc(data->column, sizeof(double*));
     if (data->display != NULL) {

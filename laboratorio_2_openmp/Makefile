@@ -26,6 +26,9 @@ clean:
 
 run:
 	@ echo "Running Mandelbrot"
+	# @ time ./bin/mandelbrotp -i 500 -a 2 -b 1 -c 3 -d 4 -s 0.001 -f ./results/parallel.raw -t 6
 	# @ time ./bin/mandelbrotp -i 500 -a -1 -b -1 -c 1 -d 1 -s 0.001 -f ./results/parallel.raw -t 8
-	@ time ./bin/mandelbrot -i 500 -a -1 -b -1 -c 1 -d 1 -s 0.001 -f ./results/secuential.raw
+	# @ time ./bin/mandelbrotp -i 500 -a -0.748766713922161 -b 0.123640844894862 -c -0.748766707771757 -d 0.123640851045266 -s 0.00000000001 -f ./results/parallel.raw -t 8
+	
+	# @ time ./bin/mandelbrot -i 500 -a -1 -b -1 -c 1 -d 1 -s 0.001 -f ./results/secuential.raw
 	# @ time ./bin/mandelbrot -i 500 -a -0.748766713922161 -b -0.748766713922161 -c 0.123640844894862 -d 0.123640844894862 -s 0.000000000001 -f ./results/secuential.raw
