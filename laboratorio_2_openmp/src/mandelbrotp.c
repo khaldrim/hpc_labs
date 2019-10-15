@@ -1,5 +1,10 @@
 #include "mandelbrotp.h"
 
+/*
+ * Entrada: Puntero a Data
+ * Salida: Vacía
+ * Obj: Libera la memoria de las filas de data->display 
+*/
 void clean(Data *data) {
     int i;
     for (i = 0; i < data->row; i++) {
@@ -8,6 +13,12 @@ void clean(Data *data) {
     }
 }
 
+/*
+ * Entrada: Puntero a Data, Puntero a char con nombre del archivo ingresado por parámetro
+ * Salida: Vacía
+ * Obj: Primero se crea un puntero al archivo de salida, luego se itera sobre data->display
+ *      para escribir por fila en el archivo de salida. Finalmente se cierra el archivo.
+*/
 void writeData(Data *data, char *fileName) {
     FILE *fp = NULL;
     int i = 0;
@@ -24,6 +35,15 @@ void writeData(Data *data, char *fileName) {
     fclose(fp);
 }
 
+/*
+ * Entrada: Puntero a Data, Entero posicion i en matriz display, Entero posicion j en matriz display, Entero que representa la profundidad, Double con Cota inferior real, Double con Cota Superior imaginaria, Double con muestreo
+ * Salida: Puntero a Data
+ * Obj: Primero se realizan dos ciclos para recorrer data->display, luego se calcula el complejo que 
+ *      corresponde a esa posicion en la matriz considerando el muestreo. Luego se inician las variables
+ *      z a utilizar. Luego se realiza el algoritmo de mandelbrot, en donde se consulta si se cumplen
+ *      las condiciones necesarias, luego actualizamos en la matriz display una vez que el valor de interaciones
+ *      fue calculado.
+*/
 void mandelbrot(Data *data, int i, int j, int depth, double a, double d, double s) {
     int n = 1;
 
@@ -45,6 +65,13 @@ void mandelbrot(Data *data, int i, int j, int depth, double a, double d, double 
     data->display[i][j] = log((double) n);
 }
 
+/* 
+ * Entrada: Puntero a Data, Parámetros de cotas reales e imaginarioas, y muestreo
+ * Salida: Puntero a Data
+ * Obj: Primero se calcula la dimension de filas y columnas a utilizar, luego se asigna
+ *      memoria a la matriz que contiene la salida de mandelbrot. Finalmente, se retorna
+ *      este puntero a Data.
+*/
 Data* initDataStructure(Data *data, double a, double b, double c, double d, double s) {
     int i;
     data = (Data*)malloc(sizeof(Data));
@@ -52,7 +79,7 @@ Data* initDataStructure(Data *data, double a, double b, double c, double d, doub
     /* calculate dimension of complex grid NxM */
     data->column = (int) ((c - a)/s) + 1;
     data->row    = (int) ((d - b)/s) + 1;
-    printf("Dimension: %d filas %d columnas \n", data->row, data->column);
+    // printf("Dimension: %d filas %d columnas \n", data->row, data->column);
     
     data->display = (double**)calloc(data->column, sizeof(double*));
     if (data->display != NULL) {
@@ -68,10 +95,22 @@ Data* initDataStructure(Data *data, double a, double b, double c, double d, doub
         exit(EXIT_FAILURE);
     }
 
-    printf("matrix created \n");
     return data;
 }
 
+/*
+ * Entrada: Recibe parámetros ingresados mediante getopt
+ * Salida: Vacía
+ * Obj: Primero se crea un puntero a la estructura Data, que contiene la informacion de filas, columnas 
+ *      y un puntero doble a double que almacena los valores obtenidos del calculo mandelbrot. Se 
+ *      inicializa los valores de Data mediante initDataStructure().
+ *      Luego se crea el bloque paralelo en donde primero se calcula cuantas filas ejecutará cada hebra,
+ *      desde que punto de las filas parte y se realiza un ciclo for con  los valores calculados anteriormente,
+ *      hay que considerar que la division entre data->row/t puede arrojar decimal, por lo que utilizamos la funcion ceil
+ *      y consideramos el caso borde para no salirnos de la matriz display. Finalmente, cada hebra llamanda a 
+ *      mandelbrot() con su posicion i,j correspondiente.
+ *      Finalmente, se escribe la matriz display y se libera la memoria con clean()
+*/
 void start(int depth, double a, double b, double c, double d, double s, char *fileName, int t) {
     /* initialize var */
     Data *data = NULL;
@@ -81,67 +120,42 @@ void start(int depth, double a, double b, double c, double d, double s, char *fi
 
     data = initDataStructure(data, a, b, c, d, s);
     
-    int i = 0;
-    while (i < data->row) {
-        #pragma omp parallel
-        {
-            int j = 0;
-            int tid = omp_get_thread_num();
-            #pragma omp parallel for
-            for(j= omp_get_thread_num(); j < data->column; j += t) {
-                // printf("fila: %d, columna: %d | tid: %d \n", i, (j+tid), tid);
-                if ((j + tid) < data->column)
-                    mandelbrot(data, i, (j+tid), depth, a, d, s);
-            }
-
-            #pragma omp barrier
-
-            #pragma omp single 
-            {
-                i++;
-            }
-        }
-    }
-
-    /* 2da version me enrrede !
-    #pragma omp parallel shared(data, depth, a, d, s)
+    #pragma omp parallel
     {
-        int i = 0, j = 0;
-        int tid = omp_get_thread_num(); 
-        j = j + tid;
-        #pragma omp parallel for shared(data, a, d, s) private(i, j, tid)  
-        for(i = 0; i < data->row; i++) {
-            while (j < data->column) {
-                mandelbrot(data, i, j, depth, a, d, s);
-                j += omp_get_thread_num();    
-                j = j + tid;
-            }
-        }
-    }
-    */
-
-    /* 1era version, se cae en matrices muy grandes, creo que es porque se generan demasiados task
-    #pragma omp parallel shared(data, depth, a, d, s)
-    {
-        int i = 0,j = 0;
-        #pragma omp single private(i, j) 
-        {
-            for (i = 0; i < data->row; i++) {
-                for (j = 0; j < data->column; j++) {
-                    #pragma omp task
-                    {
-                        mandelbrot(data, i, j, depth, a, d, s);
-                    }
+        int totalRows = ceil(data->row/t);
+        int section = omp_get_thread_num() * totalRows;
+        int i;
+        #pragma omp parallel for
+        for(i= section; i<(totalRows + section); i++) {
+            int j;
+            if (i < data->row) {
+                for(j=0; j<data->column;j++) {
+                    mandelbrot(data, i, j, depth, a, d, s);
                 }
             }
         }
     }
-    */
 
     writeData(data, fileName);
     clean(data);
 }
 
+
+/*
+ *  Bloque main, recibe los parametros mediante getopt:
+ *      -a -> cota inferior real
+ *      -b -> cota inferior imaginario
+ *      -c -> cota superior real
+ *      -d -> cota superior imaginario
+ *      -s -> factor de muestreo
+ *      -f -> archivo de salida en formato .raw
+ *      -t -> cantidad de hebras
+ * 
+ *  Luego de recibir los parametros y asignarlos, verifica si las cotas
+ *  corresponden cumplen que los valores superiores sean mayores a los inferiores
+ *  y llama a la función start().
+ * 
+*/
 int main(int argc, char **argv) {
     int i = 1, t = 1;
     double s = 0.1, a = -1.0, b = -1.0, c = 1.0, d = 1.0;
@@ -162,31 +176,15 @@ int main(int argc, char **argv) {
             break;
         case 'a':
             sscanf(optarg, "%lf", &a);
-            // if (a >= 0) {
-            //     printf("La bandera -a no puede ser menor o igual a cero.\n");
-            //     exit(EXIT_FAILURE);
-            // }
             break;
         case 'b':
             sscanf(optarg, "%lf", &b);
-            // if (b >= 0) {
-            //     printf("La bandera -b no puede ser menor o igual a cero.\n");
-            //     exit(EXIT_FAILURE);
-            // }
             break;
         case 'c':
             sscanf(optarg, "%lf", &c);
-            // if (c <= 0) {
-            //     printf("La bandera -c no puede ser menor o igual a cero.\n");
-            //     exit(EXIT_FAILURE);
-            // }
             break;
         case 'd':
             sscanf(optarg, "%lf", &d);
-            // if (d <= 0) {
-            //     printf("La bandera -d no puede ser menor o igual a cero.\n");
-            //     exit(EXIT_FAILURE);
-            // }
             break;
         case 's':
             sscanf(optarg, "%lf", &s);
@@ -219,7 +217,16 @@ int main(int argc, char **argv) {
         }       
     }
 
-    /* comprobar cotas */
+    /* Comprobando cotas */
+    if(c < a) {
+        printf("The -c parameter can't be less than -a\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(d < b) {
+        printf("The -d parameter can't be less than -b\n");
+        exit(EXIT_FAILURE);
+    }
 
     start(i,a,b,c,d,s,f,t);
     return EXIT_SUCCESS;
