@@ -1,7 +1,7 @@
 INC_DIRS = -Iinclude
 CFLAGS = -c -Wall
 
-all: clean obj/main.o obj/functions.o obj/secuential.o obj/simd.o dilation
+all: clean obj/main.o obj/functions.o obj/secuential.o obj/simd.o dilation run
 
 dilation:
 	@ gcc obj/*.o -o bin/dilation
@@ -26,5 +26,5 @@ clean:
 	@ rm -rf results/
 	@ mkdir obj/ bin/ results/
 
-# run:
-# 	@ ./bin/dilation -i ./data/example14x14.raw -s ./results/example_secuential.raw -p ./results/example_simd.raw -N 14 -D 1
+run:
+	@ ./bin/dilation -i ./data/example14x14.raw -s ./results/example_secuential.raw -p ./results/example_simd.raw -N 14 -D 1
